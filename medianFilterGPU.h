@@ -1,10 +1,17 @@
 #pragma once
-
+#include <chrono>
 #include <algorithm>
 #include <array>
+#include <iostream>
 #include <cstdint>
 #include <cstddef>
+#include <vector>
+#include <random>
+#include <cstdint>
 #include <stdexcept>
+#include <cassert>
+#include <iomanip>
+
 #include <sycl/sycl.hpp>
 #include "utils.h"
 
@@ -80,7 +87,9 @@ void MedianFilterGPU::median_filter_3x3_naive(const uint8_t* input, uint8_t* res
     uint8_t* d_result = sycl::malloc_shared<uint8_t>(height * stride, q);
 
     q.memcpy(d_input, input, height * stride * sizeof(uint8_t)).wait();
-
+    
+    auto start2 = std::chrono::high_resolution_clock::now();
+    
     q.submit([&](sycl::handler& h) {
         h.parallel_for(sycl::range<2>(height, width), [=](sycl::id<2> idx) {
             size_t y = idx[0];
@@ -114,7 +123,11 @@ void MedianFilterGPU::median_filter_3x3_naive(const uint8_t* input, uint8_t* res
             });
         });
     q.wait();
-
+    
+    auto end2 = std::chrono::high_resolution_clock::now();
+    auto duration2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);
+    std::cout << "GPU version (naive): " << duration2.count() << " ms" << std::endl;
+    
     q.memcpy(result, d_result, height * stride * sizeof(uint8_t)).wait();
 
     sycl::free(d_input, q);
@@ -132,7 +145,9 @@ void MedianFilterGPU::median_filter_3x3_not_naive(const uint8_t* input, uint8_t*
 
     size_t blocks_y = (height + BLOCK_SIZE - 1) / BLOCK_SIZE;
     size_t blocks_x = (width + BLOCK_SIZE - 1) / BLOCK_SIZE;
-
+    
+    auto start3 = std::chrono::high_resolution_clock::now();
+    
     q.submit([&](sycl::handler& h) {
         sycl::local_accessor<uint8_t, 2> shared(sycl::range<2>(SHARED_SIZE, SHARED_SIZE), h);
 
@@ -182,6 +197,11 @@ void MedianFilterGPU::median_filter_3x3_not_naive(const uint8_t* input, uint8_t*
     q.wait();
 
     q.memcpy(result, d_result, height * stride * sizeof(uint8_t)).wait();
+    
+    auto end3 = std::chrono::high_resolution_clock::now();
+    auto duration3 = std::chrono::duration_cast<std::chrono::milliseconds>(end3 - start3);
+    std::cout << "GPU version (not naive): " << duration3.count() << " ms" << std::endl;
+    
     sycl::free(d_input, q);
     sycl::free(d_result, q);
 }
