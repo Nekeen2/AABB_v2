@@ -65,7 +65,7 @@ int main() {
         }
     }
 
-    //ÎÄÍÎÏÎÒÎ×ÍÀß ÂÅĞÑÈß
+    //ÃÃ„ÃÃÃÃÃ’ÃÃ—ÃÃ€ÃŸ Ã‚Ã…ÃÃ‘ÃˆÃŸ
 
     uint8_t* resultPixelsRed = new uint8_t[width * height];
     uint8_t* resultPixelsGreen = new uint8_t[width * height];
@@ -83,7 +83,7 @@ int main() {
     auto duration1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1 - start1);
     std::cout << "Single thread version: " << duration1.count() << " ms" << std::endl;
 
-    //GPU ÂÅĞÑÈß ÍÀÈÂÍÀß
+    //GPU Ã‚Ã…ÃÃ‘ÃˆÃŸ ÃÃ€ÃˆÃ‚ÃÃ€ÃŸ
 
     sycl::queue q;
     warmupGPU(q);
@@ -92,32 +92,23 @@ int main() {
     uint8_t* resultPixelsGreen_naive = new uint8_t[width * height];
     uint8_t* resultPixelsBlue_naive = new uint8_t[width * height];
 
-    auto start2 = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < 10; ++i) {
         MedianFilterGPU::median_filter_3x3_naive(inputPixelsRed, resultPixelsRed_naive, width, height, width, q);
         MedianFilterGPU::median_filter_3x3_naive(inputPixelsGreen, resultPixelsGreen_naive, width, height, width, q);
         MedianFilterGPU::median_filter_3x3_naive(inputPixelsBlue, resultPixelsBlue_naive, width, height, width, q);
     }
-    auto end2 = std::chrono::high_resolution_clock::now();
-    auto duration2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);
-    std::cout << "GPU version (naive): " << duration2.count() << " ms" << std::endl;
 
-
-    //GPU ÂÅĞÑÈß ÍÅ ÍÀÈÂÍÀß
+    //GPU Ã‚Ã…ÃÃ‘ÃˆÃŸ ÃÃ… ÃÃ€ÃˆÃ‚ÃÃ€ÃŸ
 
     uint8_t* resultPixelsRed_not_naive = new uint8_t[width * height];
     uint8_t* resultPixelsGreen_not_naive = new uint8_t[width * height];
     uint8_t* resultPixelsBlue_not_naive = new uint8_t[width * height];
 
-    auto start3 = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < 10; ++i) {
         MedianFilterGPU::median_filter_3x3_not_naive(inputPixelsRed, resultPixelsRed_not_naive, width, height, width, q);
         MedianFilterGPU::median_filter_3x3_not_naive(inputPixelsGreen, resultPixelsGreen_not_naive, width, height, width, q);
         MedianFilterGPU::median_filter_3x3_not_naive(inputPixelsBlue, resultPixelsBlue_not_naive, width, height, width, q);
     }
-    auto end3 = std::chrono::high_resolution_clock::now();
-    auto duration3 = std::chrono::duration_cast<std::chrono::milliseconds>(end3 - start3);
-    std::cout << "GPU version (not naive): " << duration3.count() << " ms" << std::endl;
 
     assert(compare_images(resultPixelsRed, resultPixelsRed_naive, width * height));
     assert(compare_images(resultPixelsGreen, resultPixelsGreen_naive, width * height));
